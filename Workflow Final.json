@@ -1,0 +1,266 @@
+{
+  "name": "Workflow Final",
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "getAll",
+        "team": "90182630882",
+        "space": "901810680002",
+        "folder": "901813521429",
+        "list": "901817487277",
+        "filters": {}
+      },
+      "type": "n8n-nodes-base.clickUp",
+      "typeVersion": 1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "2bf4c290-02c5-4ba6-bf08-d2f6c5eef7e8",
+      "name": "Get many tasks",
+      "credentials": {
+        "clickUpApi": {
+          "id": "Izaf6RU0fmluQRGM",
+          "name": "ClickUp account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "5DayForecast",
+        "locationSelection": "coordinates",
+        "latitude": "={{ $json.custom_fields[0].value }}",
+        "longitude": "={{ $json.custom_fields[2].value }}"
+      },
+      "type": "n8n-nodes-base.openWeatherMap",
+      "typeVersion": 1,
+      "position": [
+        1040,
+        0
+      ],
+      "id": "a1cb94fd-c801-4c08-b1d2-79a12e738c63",
+      "name": "OpenWeatherMap",
+      "credentials": {
+        "openWeatherMapApi": {
+          "id": "T6WEIlfSluT9JFZW",
+          "name": "OpenWeatherMap account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('If1').item.json.custom_fields[5].value }}",
+        "subject": "Upcoming Visit- Day Weather Alert",
+        "emailType": "text",
+        "message": "=Hello {{ $('If1').item.json.name }},\n\nThis is an automated weather update for your upcoming visit on {{ $now.setZone('Asia/Dhaka').toFormat('yyyy-MM-dd') }}.\n\nForecast for your arrival time:\n- Condition: {{ $node[\"OpenWeatherMap\"].json.list.find(item => item.dt * 1000 >= parseInt($node[\"If1\"].json[\"start_date\"])).weather[0].description }}\n- Temperature: {{ $node[\"OpenWeatherMap\"].json.list.find(item => item.dt * 1000 >= parseInt($node[\"If1\"].json[\"start_date\"])).main.temp }}°C\n\nWe look forward to seeing you at the facility!",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1248,
+        0
+      ],
+      "id": "1bc64fb0-646a-4514-9e3a-3fada2ae642d",
+      "name": "Send a message",
+      "webhookId": "7c9a05d5-2b67-4fdf-816f-ee590db95bc5",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "aUvspQEiGDqxRcxk",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "seconds"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "id": "a4db058e-186c-4121-aba6-90c20c12a623",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "d067821b-ca79-41dd-9743-444eff422956",
+              "leftValue": "={{ DateTime.fromMillis(parseInt($json.due_date)).setZone('Asia/Dhaka').toFormat('yyyy-MM-dd') }}",
+              "rightValue": "={{ $now.setZone('Asia/Dhaka').toFormat('yyyy-MM-dd') }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        416,
+        0
+      ],
+      "id": "ca76fbec-3667-418c-8a81-d4fc831abac8",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "id": "={{ $('If1').item.json.id }}",
+        "updateFields": {
+          "priority": 1
+        }
+      },
+      "type": "n8n-nodes-base.clickUp",
+      "typeVersion": 1,
+      "position": [
+        1456,
+        0
+      ],
+      "id": "53e227d4-6929-468d-aed0-385fedca59ba",
+      "name": "Update a task",
+      "credentials": {
+        "clickUpApi": {
+          "id": "Izaf6RU0fmluQRGM",
+          "name": "ClickUp account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "4c9c66fb-d36f-4c2f-9e2a-55ee00f5e33f",
+              "leftValue": "={{ $json.priority == null ? true : false }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        624,
+        0
+      ],
+      "id": "8c55a7fb-86ba-4c88-838d-df820eb0cd87",
+      "name": "If1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Get many tasks": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenWeatherMap": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message": {
+      "main": [
+        [
+          {
+            "node": "Update a task",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get many tasks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "OpenWeatherMap",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "6d151a92-71ed-4e4e-8f0a-85c571880ce7",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "cf67816f457e069f4b8873ed2c6813e643b89fe39ff0f4472697228b4f189d70"
+  },
+  "id": "AO4muY4ry1IqKVfE",
+  "tags": []
+}
